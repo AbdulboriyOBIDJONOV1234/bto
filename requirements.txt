@@ -1,2 +1,4 @@
-aiogram==3.4.1
-yt-dlp==2023.12.30
+aiogram
+yt-dlp
+python-dotenv
+aiohttp

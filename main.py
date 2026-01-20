@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BotCommand
+from aiohttp import web
 import yt_dlp
 
 # -----------------------------------------------------------
@@ -140,15 +141,18 @@ def get_text(user_id, key):
 # -----------------------------------------------------------
 def download_video(url):
     # FFmpeg yo'lini aniqlash (local papkadan)
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    ffmpeg_dir = os.path.join(current_dir, "ffmpeg-master-latest-win64-gpl-shared", "ffmpeg-master-latest-win64-gpl-shared", "bin")
+    if os.name == 'nt':  # Windows tizimi uchun
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        ffmpeg_dir = os.path.join(current_dir, "ffmpeg-master-latest-win64-gpl-shared", "ffmpeg-master-latest-win64-gpl-shared", "bin")
+    else:
+        # Linux/Render uchun (tizimning o'zidan topadi)
+        ffmpeg_dir = None
 
     ydl_opts = {
         'outtmpl': 'media_%(id)s.%(ext)s', 
         'quiet': True,
         'noplaylist': True,
         'format': 'best[ext=mp4]/best',
-        'ffmpeg_location': ffmpeg_dir,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         },
@@ -158,6 +162,9 @@ def download_video(url):
             }
         }
     }
+    
+    if ffmpeg_dir:
+        ydl_opts['ffmpeg_location'] = ffmpeg_dir
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -274,10 +281,26 @@ async def set_bot_commands():
     ]
     await bot.set_my_commands(commands)
 
+# -----------------------------------------------------------
+# RENDER UCHUN WEB SERVER (Keep-Alive)
+# -----------------------------------------------------------
+async def health_check(request):
+    return web.Response(text="Bot ishlamoqda! 🚀")
+
+async def start_webhook():
+    app = web.Application()
+    app.add_routes([web.get('/', health_check)])
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.getenv("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
 async def main():
     print("Video Downloader Bot ishga tushdi... ✅")
     await set_bot_commands()  # Menuni o'rnatish
     await bot.delete_webhook(drop_pending_updates=True)
+    await start_webhook() # Web serverni ishga tushirish
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
