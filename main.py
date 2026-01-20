@@ -13,6 +13,7 @@ import yt_dlp
 # -----------------------------------------------------------
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = os.getenv("ADMIN_ID", "8104665298")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -221,12 +222,56 @@ async def language_callback(call: CallbackQuery):
     await call.message.delete()
 
 # -----------------------------------------------------------
+# ADMIN PANEL
+# -----------------------------------------------------------
+@dp.message(Command("admin"))
+async def cmd_admin(message: types.Message):
+    if str(message.from_user.id) != str(ADMIN_ID):
+        return
+
+    count = len(user_languages)
+    text = (
+        f"👨‍💻 **Admin Panel**\n\n"
+        f"👥 Foydalanuvchilar: {count} ta\n"
+        f"⚙️ Server: Render (Docker)"
+    )
+    await message.answer(text)
+
+@dp.message(Command("send"))
+async def cmd_send(message: types.Message):
+    if str(message.from_user.id) != str(ADMIN_ID):
+        return
+
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("❌ Xabar yozmadingiz.\nNamuna: `/send Salom hammaga`", parse_mode="Markdown")
+        return
+
+    msg_text = parts[1]
+    count = 0
+    
+    status = await message.answer("📤 Yuborilmoqda...")
+    
+    for user_id in user_languages:
+        try:
+            await bot.send_message(user_id, msg_text)
+            count += 1
+            await asyncio.sleep(0.05)
+        except:
+            pass
+            
+    await status.edit_text(f"✅ Xabar {count} kishiga yuborildi.")
+
+# -----------------------------------------------------------
 # LINK HANDLER (Avtomatik yuklash)
 # -----------------------------------------------------------
 @dp.message(F.text)
 async def link_handler(message: types.Message):
     url = message.text
     user_id = message.from_user.id
+    
+    if user_id not in user_languages:
+        user_languages[user_id] = 'uz'
     
     if not url.startswith("http"):
         await message.answer(get_text(user_id, 'invalid_link'))
