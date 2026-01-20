@@ -1,4 +1,5 @@
 import asyncio
+import sqlite3
 import logging
 import os
 from dotenv import load_dotenv
@@ -22,7 +23,45 @@ dp = Dispatcher()
 
 # Foydalanuvchi linklarini va tilini saqlash
 user_links = {}
-user_languages = {}
+
+# -----------------------------------------------------------
+# DATABASE (SQLite)
+# -----------------------------------------------------------
+def init_db():
+    """Bazani yaratish"""
+    with sqlite3.connect('bot.db') as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY,
+                language TEXT DEFAULT 'uz'
+            )
+        ''')
+
+def add_user(user_id, lang='uz'):
+    """Foydalanuvchini bazaga qo'shish"""
+    with sqlite3.connect('bot.db') as conn:
+        conn.execute('INSERT OR IGNORE INTO users (user_id, language) VALUES (?, ?)', (user_id, lang))
+
+def update_user_lang(user_id, lang):
+    """Tilni yangilash"""
+    with sqlite3.connect('bot.db') as conn:
+        conn.execute('INSERT OR REPLACE INTO users (user_id, language) VALUES (?, ?)', (user_id, lang))
+
+def get_user_lang(user_id):
+    """Foydalanuvchi tilini olish"""
+    with sqlite3.connect('bot.db') as conn:
+        cursor = conn.execute('SELECT language FROM users WHERE user_id = ?', (user_id,))
+        row = cursor.fetchone()
+        return row[0] if row else 'uz'
+
+def get_all_users():
+    """Barcha foydalanuvchilar ID sini olish"""
+    with sqlite3.connect('bot.db') as conn:
+        cursor = conn.execute('SELECT user_id FROM users')
+        return [row[0] for row in cursor.fetchall()]
+
+# Bot ishga tushganda bazani yaratamiz
+init_db()
 
 # -----------------------------------------------------------
 # TRANSLATIONS (3 LANGUAGES)
@@ -134,7 +173,7 @@ TRANSLATIONS = {
 
 def get_text(user_id, key):
     """Foydalanuvchi tilida matnni olish"""
-    lang = user_languages.get(user_id, 'uz')
+    lang = get_user_lang(user_id)
     return TRANSLATIONS[lang].get(key, TRANSLATIONS['uz'][key])
 
 # -----------------------------------------------------------
@@ -189,8 +228,7 @@ def download_video(url):
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id
-    if user_id not in user_languages:
-        user_languages[user_id] = 'uz'
+    add_user(user_id)
     
     await message.answer(get_text(user_id, 'welcome'), parse_mode="Markdown")
 
@@ -215,7 +253,7 @@ async def cmd_language(message: types.Message):
 async def language_callback(call: CallbackQuery):
     user_id = call.from_user.id
     lang = call.data.split("_")[1]
-    user_languages[user_id] = lang
+    update_user_lang(user_id, lang)
     
     await call.message.edit_text(get_text(user_id, 'language_changed'))
     await asyncio.sleep(1)
@@ -229,7 +267,10 @@ async def cmd_admin(message: types.Message):
     if str(message.from_user.id) != str(ADMIN_ID):
         return
 
-    count = len(user_languages)
+    with sqlite3.connect('bot.db') as conn:
+        cursor = conn.execute('SELECT COUNT(*) FROM users')
+        count = cursor.fetchone()[0]
+
     text = (
         f"👨‍💻 **Admin Panel**\n\n"
         f"👥 Foydalanuvchilar: {count} ta\n"
@@ -252,7 +293,9 @@ async def cmd_send(message: types.Message):
     
     status = await message.answer("📤 Yuborilmoqda...")
     
-    for user_id in user_languages:
+    users = get_all_users()
+    
+    for user_id in users:
         try:
             await bot.send_message(user_id, msg_text)
             count += 1
@@ -270,8 +313,7 @@ async def link_handler(message: types.Message):
     url = message.text
     user_id = message.from_user.id
     
-    if user_id not in user_languages:
-        user_languages[user_id] = 'uz'
+    add_user(user_id)
     
     if not url.startswith("http"):
         await message.answer(get_text(user_id, 'invalid_link'))
