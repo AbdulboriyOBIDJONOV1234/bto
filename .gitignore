@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+ffmpeg-master-latest-win64-gpl-shared/
+media_*
+.env
+venv/
