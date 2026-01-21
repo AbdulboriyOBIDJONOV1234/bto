@@ -171,8 +171,9 @@ def download_video(url):
         'outtmpl': 'media_%(id)s.%(ext)s', 
         'quiet': True,
         'noplaylist': False,
-        'format': 'best',
+        'format': 'best[ext=mp4]/best',
         'ignoreerrors': True,
+        'socket_timeout': 15,
     }
 
     # Saytga qarab sozlamalarni o'zgartirish
@@ -208,6 +209,7 @@ def download_video(url):
             title = info.get('title', 'Media')
             return filename, title, None
     except Exception as e:
+        logging.error(f"Download Error: {e}")
         return None, None, str(e)
 
 # -----------------------------------------------------------
