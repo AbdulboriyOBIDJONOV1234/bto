@@ -167,8 +167,9 @@ def download_video(url):
     ydl_opts = {
         'outtmpl': 'media_%(id)s.%(ext)s', 
         'quiet': True,
-        'noplaylist': True,
-        'format': 'best[ext=mp4]/best',
+        'noplaylist': False,
+        'format': 'best',
+        'ignoreerrors': True,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         },
