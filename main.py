@@ -191,6 +191,9 @@ def download_video(url):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             
+            if not info:
+                return None, None, "Media topilmadi yoki yuklab bo'lmadi."
+
             if 'entries' in info:
                 if len(info['entries']) > 0:
                     info = info['entries'][0]
