@@ -89,7 +89,8 @@ TRANSLATIONS = {
             "/start - Botni qayta boshlash\n"
             "/language - Tilni o'zgartirish\n"
             "/help - Yordam\n\n"
-            "👨‍💻 Muallif: @Abdulboriy7700"
+            "🆘 **Muammo bo'lsa, adminga yozing:**\n"
+            "👨‍💻 Asoschi: @Abdulboriy7700"
         ),
         'choose_language': "🌐 Tilni tanlang:",
         'language_changed': "✅ Til o'zgartirildi!",
@@ -123,7 +124,8 @@ TRANSLATIONS = {
             "/start - Перезапустить бота\n"
             "/language - Сменить язык\n"
             "/help - Помощь\n\n"
-            "👨‍💻 Автор: @Abdulboriy7700"
+            "🆘 **Если есть проблемы, пишите админу:**\n"
+            "👨‍💻 Создатель: @Abdulboriy7700"
         ),
         'choose_language': "🌐 Выберите язык:",
         'language_changed': "✅ Язык изменен!",
@@ -157,7 +159,8 @@ TRANSLATIONS = {
             "/start - Restart bot\n"
             "/language - Change language\n"
             "/help - Help\n\n"
-            "👨‍💻 Creator: @Abdulboriy7700"
+            "🆘 **If you have problems, contact admin:**\n"
+            "👨‍💻 Founder: @Abdulboriy7700"
         ),
         'choose_language': "🌐 Choose your language:",
         'language_changed': "✅ Language changed!",
