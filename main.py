@@ -197,7 +197,7 @@ def download_video(url):
             'format': 'best[ext=mp4]/best',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios', 'android', 'web'],
+                    'player_client': ['ios', 'android', 'android_creator', 'web'],
                 }
             },
         })
