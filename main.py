@@ -80,15 +80,6 @@ TRANSLATIONS = {
             "ℹ️ Yordam: /help"
         ),
         'help': (
-            "📖 **Yordam**\n\n"
-            "Bot qanday ishlaydi:\n"
-            "1️⃣ Video linkini yuboring (YouTube, Instagram, Facebook, Snapchat)\n"
-            "2️⃣ Video yuklanadi va sizga yuboriladi\n"
-            "3️⃣ Tayyor!\n\n"
-            "🔧 Komandalar:\n"
-            "/start - Botni qayta boshlash\n"
-            "/language - Tilni o'zgartirish\n"
-            "/help - Yordam\n\n"
             "🆘 **Muammo bo'lsa, adminga yozing:**\n"
             "👨‍💻 Asoschi: @Abdulboriy7700"
         ),
@@ -115,15 +106,6 @@ TRANSLATIONS = {
             "ℹ️ Помощь: /help"
         ),
         'help': (
-            "📖 **Помощь**\n\n"
-            "Как работает бот:\n"
-            "1️⃣ Отправьте ссылку на видео (YouTube, Instagram, Facebook, Snapchat)\n"
-            "2️⃣ Видео будет загружено и отправлено вам\n"
-            "3️⃣ Готово!\n\n"
-            "🔧 Команды:\n"
-            "/start - Перезапустить бота\n"
-            "/language - Сменить язык\n"
-            "/help - Помощь\n\n"
             "🆘 **Если есть проблемы, пишите админу:**\n"
             "👨‍💻 Создатель: @Abdulboriy7700"
         ),
@@ -150,15 +132,6 @@ TRANSLATIONS = {
             "ℹ️ Help: /help"
         ),
         'help': (
-            "📖 **Help**\n\n"
-            "How the bot works:\n"
-            "1️⃣ Send a video link (YouTube, Instagram, Facebook, Snapchat)\n"
-            "2️⃣ Video will be downloaded and sent to you\n"
-            "3️⃣ Done!\n\n"
-            "🔧 Commands:\n"
-            "/start - Restart bot\n"
-            "/language - Change language\n"
-            "/help - Help\n\n"
             "🆘 **If you have problems, contact admin:**\n"
             "👨‍💻 Founder: @Abdulboriy7700"
         ),
