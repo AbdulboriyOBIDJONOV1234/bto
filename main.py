@@ -227,18 +227,12 @@ def download_video(url):
     elif "youtube.com" in url or "youtu.be" in url:
         ydl_opts.update({
             'force_ipv4': True,
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            'format': 'best[ext=mp4]/best',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web', 'ios'],
-                    'skip': ['hls', 'dash'],
+                    'player_client': ['android', 'web'],
                 }
             },
-            # Shorts uchun maxsus sozlamalar
-            'postprocessors': [{
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': 'mp4',
-            }],
         })
         
     elif "tiktok.com" in url:
