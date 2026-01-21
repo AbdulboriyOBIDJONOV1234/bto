@@ -158,35 +158,6 @@ def get_text(user_id, key):
     return TRANSLATIONS[lang].get(key, TRANSLATIONS['uz'][key])
 
 # -----------------------------------------------------------
-# URL NORMALIZATSIYA (YOUTUBE SHORTS FIX)
-# -----------------------------------------------------------
-def normalize_youtube_url(url):
-    """YouTube Shorts URLni oddiy formatga o'tkazish"""
-    try:
-        # YouTube Shorts formatini aniqlash
-        if "youtube.com/shorts/" in url:
-            # Video ID ni olish (parametrlarni ham hisobga olib)
-            parts = url.split("/shorts/")[1]
-            video_id = parts.split("?")[0].split("&")[0].strip()
-            
-            # Oddiy YouTube formatiga o'tkazish
-            normalized_url = f"https://www.youtube.com/watch?v={video_id}"
-            logging.info(f"Shorts URL converted: {url} -> {normalized_url}")
-            return normalized_url
-        
-        # youtu.be formatini ham normalizatsiya qilish
-        elif "youtu.be/" in url:
-            video_id = url.split("youtu.be/")[1].split("?")[0].split("&")[0].strip()
-            normalized_url = f"https://www.youtube.com/watch?v={video_id}"
-            logging.info(f"Short URL converted: {url} -> {normalized_url}")
-            return normalized_url
-            
-        return url
-    except Exception as e:
-        logging.error(f"URL normalization error: {e}")
-        return url
-
-# -----------------------------------------------------------
 # ADVANCED VIDEO YUKLASH (95%+ SUCCESS RATE)
 # -----------------------------------------------------------
 def download_video(url):
@@ -195,10 +166,6 @@ def download_video(url):
     # Yuklash papkasini yaratish
     if not os.path.exists('downloads'):
         os.makedirs('downloads')
-    
-    # YouTube URL ni normalizatsiya qilish (SHORTS FIX)
-    original_url = url
-    url = normalize_youtube_url(url)
     
     # Asosiy sozlamalar
     ydl_opts = {
@@ -230,7 +197,7 @@ def download_video(url):
             'format': 'best[ext=mp4]/best',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web'],
+                    'player_client': ['ios', 'android', 'web'],
                 }
             },
         })
