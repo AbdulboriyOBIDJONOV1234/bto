@@ -256,15 +256,15 @@ def _download_standard(url, ffmpeg_dir):
         ydl_opts['http_headers']['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
         
     elif "youtube.com" in url or "youtu.be" in url:
-        ydl_opts['format'] = 'best[height<=720][ext=mp4]/best[ext=mp4]/best'
+        ydl_opts['format'] = 'best[ext=mp4]/best'
         ydl_opts['extractor_args'] = {
             'youtube': {
-                'player_client': ['android', 'ios', 'tv_embedded', 'web'],
-                'skip': ['hls', 'dash'],
-                'player_skip': ['webpage', 'configs'],
+                'player_client': ['ios', 'android', 'web'],
             }
         }
-        ydl_opts['http_headers']['User-Agent'] = 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip'
+        # YouTube uchun User-Agentni o'chiramiz, yt-dlp o'zi mosini tanlaydi
+        if 'User-Agent' in ydl_opts['http_headers']:
+            del ydl_opts['http_headers']['User-Agent']
         
     elif "tiktok.com" in original_url:
         ydl_opts['http_headers']['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
