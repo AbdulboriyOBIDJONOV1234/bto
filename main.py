@@ -14,7 +14,7 @@ import yt_dlp
 # TOKEN
 # -----------------------------------------------------------
 load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("8307877849:AAEJ3clxBtyf8vlGkcAWIy4XSNXWfbzMppI")
 ADMIN_ID = os.getenv("ADMIN_ID", "8104665298")
 
 logging.basicConfig(level=logging.INFO)
@@ -170,9 +170,8 @@ def download_video(url):
     # Asosiy sozlamalar
     ydl_opts = {
         'outtmpl': 'downloads/%(id)s.%(ext)s',
-        'format': 'best[ext=mp4]/best',
         'noplaylist': True,
-        'quiet': False,  # Debug uchun False qilamiz
+        'quiet': False,
         'no_warnings': False,
         'ignoreerrors': False,
         'geo_bypass': True,
@@ -192,14 +191,24 @@ def download_video(url):
         })
         
     elif "youtube.com" in url or "youtu.be" in url:
+        # ENHANCED YOUTUBE SHORTS SUPPORT
         ydl_opts.update({
             'force_ipv4': True,
-            'format': 'best[ext=mp4]/best',
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            'merge_output_format': 'mp4',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios', 'android', 'android_creator', 'web'],
+                    'player_client': ['ios', 'android', 'web'],
+                    'skip': ['dash', 'hls'],
                 }
             },
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+            'socket_timeout': 40,
+            'retries': 5,
+            'fragment_retries': 5,
         })
         
     elif "tiktok.com" in url:
