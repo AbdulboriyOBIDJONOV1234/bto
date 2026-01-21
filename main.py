@@ -71,7 +71,7 @@ TRANSLATIONS = {
         'welcome': (
             "👋 **Salom! Men Universal Video Yuklovchiman.**\n\n"
             "Men quyidagilardan video yuklab beraman:\n"
-            "🔹 **YouTube**\n"
+            "🔹 **YouTube** (Shorts ham)\n"
             "🔹 **Instagram** (Stories, Reels, Post)\n"
             "🔹 **TikTok**\n"
             "🔹 **Facebook**\n"
@@ -98,7 +98,7 @@ TRANSLATIONS = {
         'welcome': (
             "👋 **Привет! Я загрузчик видео.**\n\n"
             "Я могу скачать видео с:\n"
-            "🔹 **YouTube**\n"
+            "🔹 **YouTube** (включая Shorts)\n"
             "🔹 **Instagram** (Stories, Reels, Post)\n"
             "🔹 **TikTok**\n"
             "🔹 **Facebook**\n"
@@ -125,7 +125,7 @@ TRANSLATIONS = {
         'welcome': (
             "👋 **Hello! I'm a Video Downloader.**\n\n"
             "I can download videos from:\n"
-            "🔹 **YouTube**\n"
+            "🔹 **YouTube** (including Shorts)\n"
             "🔹 **Instagram** (Stories, Reels, Post)\n"
             "🔹 **TikTok**\n"
             "🔹 **Facebook**\n"
@@ -156,7 +156,7 @@ def get_text(user_id, key):
     return TRANSLATIONS[lang].get(key, TRANSLATIONS['uz'][key])
 
 # -----------------------------------------------------------
-# VIDEO YUKLASH FUNKSIYASI
+# VIDEO YUKLASH FUNKSIYASI (FIXED)
 # -----------------------------------------------------------
 def download_video(url):
     # FFmpeg yo'lini aniqlash (local papkadan)
@@ -167,50 +167,114 @@ def download_video(url):
         # Linux/Render uchun (tizimning o'zidan topadi)
         ffmpeg_dir = None
 
+    # Asosiy yt-dlp sozlamalari
     ydl_opts = {
-        'outtmpl': 'media_%(id)s.%(ext)s', 
-        'quiet': True,
-        'noplaylist': False,
+        'outtmpl': 'media_%(id)s.%(ext)s',
+        'quiet': False,  # Xatolarni ko'rish uchun
+        'no_warnings': False,
+        'noplaylist': True,  # Faqat bitta video
         'format': 'best[ext=mp4]/best',
-        'ignoreerrors': True,
-        'socket_timeout': 15,
+        'merge_output_format': 'mp4',
+        'socket_timeout': 30,
+        'retries': 3,
+        'fragment_retries': 3,
+        'http_chunk_size': 10485760,  # 10MB chunks
     }
 
-    # Saytga qarab sozlamalarni o'zgartirish
+    # Instagram uchun maxsus sozlamalar
     if "instagram.com" in url:
-        ydl_opts['force_ipv4'] = True
-        ydl_opts['http_headers'] = {
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-        }
+        ydl_opts.update({
+            'format': 'best',
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Sec-Fetch-Mode': 'navigate',
+            },
+            'cookiefile': None,
+            'nocheckcertificate': True,
+        })
+    
+    # YouTube va YouTube Shorts uchun
     elif "youtube.com" in url or "youtu.be" in url:
-        ydl_opts['extractor_args'] = {
-            'youtube': {
-                'player_client': ['android', 'web']
+        ydl_opts.update({
+            'format': 'best[height<=720][ext=mp4]/best[ext=mp4]/best',
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web'],
+                    'skip': ['hls', 'dash']
+                }
+            },
+        })
+    
+    # TikTok uchun
+    elif "tiktok.com" in url:
+        ydl_opts.update({
+            'format': 'best',
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             }
-        }
+        })
     
     if ffmpeg_dir:
         ydl_opts['ffmpeg_location'] = ffmpeg_dir
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
+            # Avval info ni olish
+            logging.info(f"Extracting info from: {url}")
+            info = ydl.extract_info(url, download=False)
             
             if not info:
-                return None, None, "Media topilmadi yoki yuklab bo'lmadi."
+                return None, None, "Video ma'lumotlari topilmadi"
 
+            # Agar playlist bo'lsa, birinchi videoni olish
             if 'entries' in info:
                 if len(info['entries']) > 0:
                     info = info['entries'][0]
                 else:
-                    return None, None, "Media topilmadi."
+                    return None, None, "Video topilmadi"
 
+            # Video formatini tekshirish
+            if 'formats' not in info or not info['formats']:
+                return None, None, "Video formati topilmadi"
+
+            logging.info(f"Downloading: {info.get('title', 'Unknown')}")
+            
+            # Haqiqiy yuklash
+            ydl.download([url])
+            
             filename = ydl.prepare_filename(info)
             title = info.get('title', 'Media')
-            return filename, title, None
+            
+            # Fayl mavjudligini tekshirish
+            if not os.path.exists(filename):
+                # Ba'zan fayl nomi o'zgarishi mumkin, shuning uchun qidiramiz
+                base_name = os.path.splitext(filename)[0]
+                for ext in ['.mp4', '.mkv', '.webm', '.mov']:
+                    test_file = base_name + ext
+                    if os.path.exists(test_file):
+                        filename = test_file
+                        break
+            
+            if os.path.exists(filename):
+                logging.info(f"Downloaded successfully: {filename}")
+                return filename, title, None
+            else:
+                return None, None, "Fayl yuklab olinmadi"
+                
+    except yt_dlp.utils.DownloadError as e:
+        error_msg = str(e)
+        logging.error(f"Download Error: {error_msg}")
+        if "private" in error_msg.lower():
+            return None, None, "Bu video shaxsiy (private)"
+        elif "not available" in error_msg.lower():
+            return None, None, "Video mavjud emas yoki o'chirilgan"
+        else:
+            return None, None, f"Yuklashda xatolik: {error_msg[:100]}"
     except Exception as e:
-        logging.error(f"Download Error: {e}")
-        return None, None, str(e)
+        logging.error(f"General Error: {e}")
+        return None, None, f"Xatolik: {str(e)[:100]}"
 
 # -----------------------------------------------------------
 # KOMANDALAR
@@ -300,7 +364,7 @@ async def cmd_send(message: types.Message):
 # -----------------------------------------------------------
 @dp.message(F.text)
 async def link_handler(message: types.Message):
-    url = message.text
+    url = message.text.strip()
     user_id = message.from_user.id
     
     add_user(user_id)
@@ -316,7 +380,7 @@ async def link_handler(message: types.Message):
     filename, title, error_msg = await loop.run_in_executor(None, download_video, url)
 
     if error_msg:
-        await status_msg.edit_text(get_text(user_id, 'error').format(str(error_msg)[:100]))
+        await status_msg.edit_text(get_text(user_id, 'error').format(error_msg))
     elif filename and os.path.exists(filename):
         try:
             file_size = os.path.getsize(filename) / (1024 * 1024)
@@ -329,20 +393,21 @@ async def link_handler(message: types.Message):
             media_file = FSInputFile(filename)
 
             ext = os.path.splitext(filename)[1].lower()
-            if ext in ['.jpg', '.png', '.webp']:
+            if ext in ['.jpg', '.png', '.webp', '.jpeg']:
                 await message.answer_photo(media_file, caption=f"📸 {title}\n🤖 @Abdulboriy7700")
             else:
                 await message.answer_video(media_file, caption=f"📹 {title}\n🤖 @Abdulboriy7700")
 
             await status_msg.delete()
         except Exception as e:
-            await status_msg.edit_text(get_text(user_id, 'upload_error').format(e))
+            logging.error(f"Upload error: {e}")
+            await status_msg.edit_text(get_text(user_id, 'upload_error').format(str(e)[:100]))
         finally:
             if os.path.exists(filename):
                 try:
                     os.remove(filename)
-                except:
-                    pass
+                except Exception as e:
+                    logging.error(f"File deletion error: {e}")
     else:
         await status_msg.edit_text(get_text(user_id, 'file_not_found'))
 
