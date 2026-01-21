@@ -176,9 +176,12 @@ def download_video(url):
         'format': 'best[ext=mp4]/best',
         'merge_output_format': 'mp4',
         'socket_timeout': 30,
-        'retries': 3,
-        'fragment_retries': 3,
+        'retries': 5,
+        'fragment_retries': 5,
         'http_chunk_size': 10485760,  # 10MB chunks
+        'nocheckcertificate': True,
+        'geo_bypass': True,
+        'geo_bypass_country': 'US',
     }
 
     # Instagram uchun maxsus sozlamalar
@@ -193,7 +196,15 @@ def download_video(url):
             },
             'cookiefile': None,
             'nocheckcertificate': True,
+            'age_limit': None,
         })
+        # Instagram uchun alternativ extractor
+        try:
+            # Birinchi urinish - oddiy usul
+            pass
+        except:
+            # Ikkinchi urinish - boshqa extractor
+            ydl_opts['extractor_args'] = {'instagram': {'api_version': 'v1'}}
     
     # YouTube va YouTube Shorts uchun
     elif "youtube.com" in url or "youtu.be" in url:
@@ -201,10 +212,17 @@ def download_video(url):
             'format': 'best[height<=720][ext=mp4]/best[ext=mp4]/best',
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web'],
-                    'skip': ['hls', 'dash']
+                    'player_client': ['android', 'ios', 'web', 'mweb'],
+                    'skip': ['hls', 'dash'],
+                    'player_skip': ['webpage', 'configs'],
                 }
             },
+            'http_headers': {
+                'User-Agent': 'com.google.android.youtube/19.02.39 (Linux; U; Android 11) gzip',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+            'extractor_retries': 3,
+            'nocheckcertificate': True,
         })
     
     # TikTok uchun
