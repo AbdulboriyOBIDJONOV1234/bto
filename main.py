@@ -251,7 +251,9 @@ def _download_standard(url, ffmpeg_dir):
 
     # Platform-specific settings
     if "instagram.com" in original_url:
-        ydl_opts['http_headers']['User-Agent'] = 'Instagram 219.0.0.12.117 Android'
+        ydl_opts['noplaylist'] = False
+        ydl_opts['force_ipv4'] = True
+        ydl_opts['http_headers']['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
         
     elif "youtube.com" in url or "youtu.be" in url:
         ydl_opts['format'] = 'best[height<=720][ext=mp4]/best[ext=mp4]/best'
