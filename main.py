@@ -173,16 +173,20 @@ def download_video(url):
         'noplaylist': False,
         'format': 'best',
         'ignoreerrors': True,
-        'force_ipv4': True,
-        'http_headers': {
+    }
+
+    # Saytga qarab sozlamalarni o'zgartirish
+    if "instagram.com" in url:
+        ydl_opts['force_ipv4'] = True
+        ydl_opts['http_headers'] = {
             'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-        },
-        'extractor_args': {
+        }
+    elif "youtube.com" in url or "youtu.be" in url:
+        ydl_opts['extractor_args'] = {
             'youtube': {
                 'player_client': ['android', 'web']
             }
         }
-    }
     
     if ffmpeg_dir:
         ydl_opts['ffmpeg_location'] = ffmpeg_dir
