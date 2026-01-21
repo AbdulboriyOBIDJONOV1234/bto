@@ -86,7 +86,7 @@ TRANSLATIONS = {
         'choose_language': "🌐 Tilni tanlang:",
         'language_changed': "✅ Til o'zgartirildi!",
         'invalid_link': "❌ Iltimos, to'g'ri link yuboring.",
-        'downloading': "⏳ **📹 Video yuklanmoqda...**\n(Biroz kuting, bu 30-60 soniya olishi mumkin)",
+        'downloading': " **Video yuklanmoqda...**",
         'error': "❌ Xatolik: {}",
         'file_too_large': "❌ Fayl 50 MB dan katta. Telegramga yuklab bo'lmaydi.",
         'uploading': "📤 Telegramga yuklanmoqda...",
@@ -114,7 +114,7 @@ TRANSLATIONS = {
         'choose_language': "🌐 Выберите язык:",
         'language_changed': "✅ Язык изменен!",
         'invalid_link': "❌ Пожалуйста, отправьте правильную ссылку.",
-        'downloading': "⏳ **📹 Загрузка видео...**\n(Пожалуйста, подождите 30-60 секунд)",
+        'downloading': "🚀 **Загрузка видео...**",
         'error': "❌ Ошибка: {}",
         'file_too_large': "❌ Файл больше 50 МБ. Невозможно загрузить в Telegram.",
         'uploading': "📤 Загрузка в Telegram...",
@@ -142,7 +142,7 @@ TRANSLATIONS = {
         'choose_language': "🌐 Choose your language:",
         'language_changed': "✅ Language changed!",
         'invalid_link': "❌ Please send a valid link.",
-        'downloading': "⏳ **📹 Downloading video...**\n(Please wait 30-60 seconds)",
+        'downloading': "🚀 **Downloading video...**",
         'error': "❌ Error: {}",
         'file_too_large': "❌ File is larger than 50 MB. Cannot upload to Telegram.",
         'uploading': "📤 Uploading to Telegram...",
@@ -177,6 +177,11 @@ def download_video(url):
     if not os.path.exists('downloads'):
         os.makedirs('downloads')
     
+    # YouTube Shorts fix: Linkni oddiy videoga aylantirish
+    if "youtube.com/shorts/" in url:
+        video_id = url.split("/shorts/")[1].split("?")[0]
+        url = f"https://www.youtube.com/watch?v={video_id}"
+    
     ydl_opts = {
         'outtmpl': 'downloads/%(id)s.%(ext)s',
         'format': 'best[ext=mp4]/best', # MP4 formatini afzal ko'rish
@@ -201,8 +206,7 @@ def download_video(url):
         ydl_opts['force_ipv4'] = True
         ydl_opts['extractor_args'] = {
             'youtube': {
-                'player_client': ['android', 'web'], # Android mijozi barqarorroq
-                'player_client': ['ios', 'android', 'web'], # iOS Shorts uchun yaxshi
+                'player_client': ['android', 'web'], # Android eng ishonchli
             }
         }
         # YouTube uchun User-Agentni olib tashlaymiz
