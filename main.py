@@ -170,197 +170,74 @@ USER_AGENTS = [
 # -----------------------------------------------------------
 # ADVANCED VIDEO YUKLASH (90-95% SUCCESS RATE)
 # -----------------------------------------------------------
-def download_video(url, max_retries=3):
-    """
-    Eng kuchli video downloader - 3 xil usul bilan urinadi
-    """
+def download_video(url):
+    """Soddalashtirilgan va ishonchli yuklash funksiyasi"""
     
-    # FFmpeg yo'lini aniqlash
-    if os.name == 'nt':
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        ffmpeg_dir = os.path.join(current_dir, "ffmpeg-master-latest-win64-gpl-shared", "ffmpeg-master-latest-win64-gpl-shared", "bin")
-    else:
-        ffmpeg_dir = None
-
-    # METHOD 1: Standard yt-dlp
-    for attempt in range(max_retries):
-        try:
-            logging.info(f"Attempt {attempt + 1}/{max_retries}: Trying standard method")
-            result = _download_standard(url, ffmpeg_dir)
-            if result[0]:  # Agar fayl topilsa
-                return result
-        except Exception as e:
-            logging.error(f"Standard method failed: {e}")
-        
-        # Har bir urinish o'rtasida 2 soniya kutish
-        if attempt < max_retries - 1:
-            asyncio.sleep(2)
-    
-    # METHOD 2: Alternative extractors
-    try:
-        logging.info("Trying alternative extractors")
-        result = _download_alternative(url, ffmpeg_dir)
-        if result[0]:
-            return result
-    except Exception as e:
-        logging.error(f"Alternative method failed: {e}")
-    
-    # METHOD 3: Generic extractor (last resort)
-    try:
-        logging.info("Trying generic extractor")
-        result = _download_generic(url, ffmpeg_dir)
-        if result[0]:
-            return result
-    except Exception as e:
-        logging.error(f"Generic method failed: {e}")
-    
-    return None, None, "Barcha urinishlar muvaffaqiyatsiz tugadi. Video yuklab bo'lmadi."
-
-def _download_standard(url, ffmpeg_dir):
-    """Standard yuklash usuli"""
-    
-    # Shorts linkni oddiy formatga o'zgartirish
-    original_url = url
-    if "/shorts/" in url:
-        video_id = url.split("/shorts/")[1].split("?")[0]
-        url = f"https://www.youtube.com/watch?v={video_id}"
-        logging.info(f"Converted shorts URL: {url}")
+    # Yuklash papkasini yaratish
+    if not os.path.exists('downloads'):
+        os.makedirs('downloads')
     
     ydl_opts = {
-        'outtmpl': 'media_%(id)s.%(ext)s',
-        'quiet': False,
-        'no_warnings': False,
-        'noplaylist': True,
-        'format': 'best[ext=mp4]/best',
-        'merge_output_format': 'mp4',
-        'socket_timeout': 60,
-        'retries': 10,
-        'fragment_retries': 10,
-        'http_chunk_size': 10485760,
-        'nocheckcertificate': True,
+        'outtmpl': 'downloads/%(id)s.%(ext)s',
+        'format': 'best[ext=mp4]/best', # MP4 formatini afzal ko'rish
+        'noplaylist': True, # Odatda bitta video
+        'quiet': True,
+        'no_warnings': True,
+        'ignoreerrors': True,
         'geo_bypass': True,
-        'geo_bypass_country': 'US',
-        'prefer_insecure': True,
+        'socket_timeout': 30,
         'http_headers': {
-            'User-Agent': random.choice(USER_AGENTS),
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-us,en;q=0.5',
-            'Sec-Fetch-Mode': 'navigate',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         }
     }
 
-    # Platform-specific settings
-    if "instagram.com" in original_url:
-        ydl_opts['noplaylist'] = False
-        ydl_opts['force_ipv4'] = True
+    # Saytga qarab maxsus sozlamalar
+    if "instagram.com" in url:
+        ydl_opts['noplaylist'] = False # Karusel (rasmlar) uchun
+        ydl_opts['force_ipv4'] = True # Instagram blokini aylanib o'tish
         ydl_opts['http_headers']['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
         
     elif "youtube.com" in url or "youtu.be" in url:
-        ydl_opts['format'] = 'best[ext=mp4]/best'
         ydl_opts['extractor_args'] = {
             'youtube': {
-                'player_client': ['ios', 'android', 'web'],
+                'player_client': ['android', 'web'], # Android mijozi barqarorroq
             }
         }
-        # YouTube uchun User-Agentni o'chiramiz, yt-dlp o'zi mosini tanlaydi
+        # YouTube uchun User-Agentni olib tashlaymiz
         if 'User-Agent' in ydl_opts['http_headers']:
             del ydl_opts['http_headers']['User-Agent']
         
-    elif "tiktok.com" in original_url:
+    elif "tiktok.com" in url:
         ydl_opts['http_headers']['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
     
-    if ffmpeg_dir:
-        ydl_opts['ffmpeg_location'] = ffmpeg_dir
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # To'g'ridan-to'g'ri yuklash
+            info = ydl.extract_info(url, download=True)
+            
+            if not info:
+                return None, None, "Media topilmadi."
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        
-        if not info:
-            return None, None, "Video ma'lumotlari topilmadi"
-
-        if 'entries' in info:
-            if len(info['entries']) > 0:
-                info = info['entries'][0]
-            else:
-                return None, None, "Video topilmadi"
-
-        if 'formats' not in info or not info['formats']:
-            return None, None, "Video formati topilmadi"
-
-        logging.info(f"Downloading: {info.get('title', 'Unknown')}")
-        ydl.download([url])
-        
-        filename = ydl.prepare_filename(info)
-        title = info.get('title', 'Media')
-        
-        # Fayl topish
-        if not os.path.exists(filename):
-            base_name = os.path.splitext(filename)[0]
-            for ext in ['.mp4', '.mkv', '.webm', '.mov', '.avi']:
-                test_file = base_name + ext
-                if os.path.exists(test_file):
-                    filename = test_file
-                    break
-        
-        if os.path.exists(filename):
-            return filename, title, None
-        else:
-            return None, None, "Fayl yuklab olinmadi"
-
-def _download_alternative(url, ffmpeg_dir):
-    """Alternative extractors bilan yuklash"""
-    
-    ydl_opts = {
-        'outtmpl': 'media_%(id)s.%(ext)s',
-        'format': 'best',
-        'noplaylist': True,
-        'socket_timeout': 60,
-        'http_headers': {
-            'User-Agent': random.choice(USER_AGENTS),
-        },
-        'extractor_args': {
-            'generic': {
-                'force_generic_extractor': True
-            }
-        }
-    }
-    
-    if ffmpeg_dir:
-        ydl_opts['ffmpeg_location'] = ffmpeg_dir
-    
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        if info:
+            # Agar playlist yoki karusel bo'lsa
+            if 'entries' in info:
+                # Birinchi muvaffaqiyatli faylni qaytarish
+                for entry in info['entries']:
+                    if entry:
+                        filename = ydl.prepare_filename(entry)
+                        if os.path.exists(filename):
+                            return filename, entry.get('title', 'Media'), None
+                return None, None, "Playlistdan hech narsa yuklanmadi."
+            
+            # Yakkama-yakka video
             filename = ydl.prepare_filename(info)
-            title = info.get('title', 'Media')
             if os.path.exists(filename):
-                return filename, title, None
-    
-    return None, None, "Alternative method failed"
+                return filename, info.get('title', 'Media'), None
+            
+            return None, None, "Fayl saqlanmadi."
 
-def _download_generic(url, ffmpeg_dir):
-    """Generic extractor - oxirgi imkoniyat"""
-    
-    ydl_opts = {
-        'outtmpl': 'media_%(id)s.%(ext)s',
-        'format': 'best',
-        'noplaylist': True,
-        'force_generic_extractor': True,
-        'socket_timeout': 60,
-    }
-    
-    if ffmpeg_dir:
-        ydl_opts['ffmpeg_location'] = ffmpeg_dir
-    
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        if info:
-            filename = ydl.prepare_filename(info)
-            title = info.get('title', 'Media')
-            if os.path.exists(filename):
-                return filename, title, None
-    
-    return None, None, "Generic method failed"
+    except Exception as e:
+        logging.error(f"Download error: {e}")
+        return None, None, str(e)
 
 # -----------------------------------------------------------
 # KOMANDALAR
@@ -456,7 +333,7 @@ async def link_handler(message: types.Message):
     status_msg = await message.answer(get_text(user_id, 'downloading'))
 
     loop = asyncio.get_event_loop()
-    filename, title, error_msg = await loop.run_in_executor(None, download_video, url, 3)
+    filename, title, error_msg = await loop.run_in_executor(None, download_video, url)
 
     if error_msg:
         await status_msg.edit_text(get_text(user_id, 'error').format(error_msg[:150]))
