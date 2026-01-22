@@ -14,7 +14,7 @@ import yt_dlp
 # TOKEN
 # -----------------------------------------------------------
 load_dotenv()
-BOT_TOKEN = os.getenv("8307877849:AAEJ3clxBtyf8vlGkcAWIy4XSNXWfbzMppI")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8307877849:AAEJ3clxBtyf8vlGkcAWIy4XSNXWfbzMppI")
 ADMIN_ID = os.getenv("ADMIN_ID", "8104665298")
 
 logging.basicConfig(level=logging.INFO)
