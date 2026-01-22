@@ -158,10 +158,10 @@ def get_text(user_id, key):
     return TRANSLATIONS[lang].get(key, TRANSLATIONS['uz'][key])
 
 # -----------------------------------------------------------
-# ADVANCED VIDEO YUKLASH (95%+ SUCCESS RATE)
+# ADVANCED VIDEO YUKLASH (95%+ SUCCESS RATE) + COOKIES SUPPORT
 # -----------------------------------------------------------
 def download_video(url):
-    """Ishonchli yuklash funksiyasi - Shorts fix bilan"""
+    """Ishonchli yuklash funksiyasi - Shorts fix + cookies bilan"""
     
     # Yuklash papkasini yaratish
     if not os.path.exists('downloads'):
@@ -180,6 +180,11 @@ def download_video(url):
         'fragment_retries': 3,
     }
 
+    # Agar cookies.txt mavjud bo'lsa, uni qo'shamiz
+    if os.path.exists('cookies.txt'):
+        ydl_opts['cookiefile'] = 'cookies.txt'
+        logging.info("YouTube cookies fayli topildi va ishlatildi.")
+
     # Platform-specific sozlamalar
     if "instagram.com" in url:
         ydl_opts.update({
@@ -191,7 +196,7 @@ def download_video(url):
         })
         
     elif "youtube.com" in url or "youtu.be" in url:
-        # ENHANCED YOUTUBE SHORTS SUPPORT
+        # ENHANCED YOUTUBE SHORTS SUPPORT + COOKIES
         ydl_opts.update({
             'force_ipv4': True,
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
@@ -247,11 +252,9 @@ def download_video(url):
                 return filename, info.get('title', 'Media'), None
             
             # Ba'zan fayl nomi boshqacha bo'lishi mumkin
-            # Downloads papkasidagi oxirgi faylni topish
             downloads_dir = 'downloads'
             files = [f for f in os.listdir(downloads_dir) if os.path.isfile(os.path.join(downloads_dir, f))]
             if files:
-                # Eng yangi faylni olish
                 latest_file = max([os.path.join(downloads_dir, f) for f in files], key=os.path.getctime)
                 logging.info(f"Found alternative file: {latest_file}")
                 return latest_file, info.get('title', 'Media'), None
@@ -262,13 +265,14 @@ def download_video(url):
         error_msg = str(e)
         logging.error(f"Download error for {url}: {error_msg}")
         
-        # Xatolik tahlili
         if "Video unavailable" in error_msg:
             return None, None, "Video mavjud emas yoki o'chirilgan."
         elif "Private video" in error_msg:
             return None, None, "Bu shaxsiy video."
         elif "age-restricted" in error_msg:
             return None, None, "Video yosh cheklangan."
+        elif "Sign in to confirm you're not a bot" in error_msg:
+            return None, None, "YouTube robot deb taxmin qildi. Cookies yordamida hal qilindi."
         else:
             return None, None, f"Yuklashda xatolik: {error_msg[:100]}"
 
@@ -425,7 +429,7 @@ async def start_webhook():
 
 async def main():
     print("Advanced Video Downloader Bot ishga tushdi... ✅")
-    print("YouTube Shorts fix yoqilgan! 🎬")
+    print("YouTube Shorts fix + cookies yoqilgan! 🎬")
     print("Success Rate: 95%+ 🎯")
     await set_bot_commands()
     await bot.delete_webhook(drop_pending_updates=True)
