@@ -199,8 +199,7 @@ def download_video(url):
         # ENHANCED YOUTUBE SHORTS SUPPORT + COOKIES
         ydl_opts.update({
             'force_ipv4': True,
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'merge_output_format': 'mp4',
+            'format': 'best[ext=mp4]/best',
             'extractor_args': {
                 'youtube': {
                     'player_client': ['ios', 'android', 'web'],
@@ -431,9 +430,15 @@ async def main():
     print("Advanced Video Downloader Bot ishga tushdi... ✅")
     print("YouTube Shorts fix + cookies yoqilgan! 🎬")
     print("Success Rate: 95%+ 🎯")
+    
+    # 1. Web serverni birinchi ishga tushiramiz (Render Timeout bermasligi uchun)
+    await start_webhook()
+    
+    # 2. Keyin bot sozlamalarini bajaramiz
     await set_bot_commands()
     await bot.delete_webhook(drop_pending_updates=True)
-    await start_webhook()
+    
+    # 3. Polling
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
